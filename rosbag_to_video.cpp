@@ -1,6 +1,25 @@
+// ROSbag to Video
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Converts an image topic (of RGGB format) from a ROSbag into an MP4 video
+
 #include <stdio.h>
+
 #include <algorithm>
 #include <string>
+
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 #include <cv_bridge/cv_bridge.h>
@@ -11,24 +30,27 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <boost/filesystem.hpp>
 
+namespace rosbag_to_video {
 
+// Returns a debayered version of the input image.  Assumes RGGB input
 cv::Mat debayer(const cv_bridge::CvImageConstPtr & cv_ptr) {
     cv::Mat debayered;
     cv::cvtColor(cv_ptr->image, debayered, CV_BayerBG2BGR);
     return debayered;
 }
 
-// bag_to_images(bag_path, topic_name, save_path="output_dir")
-//  * Open bag file and save all images of a certain topic
-//  * Return average/median fps (TODO median)
-//  * check if bag exists
-//  * watch for CvBridge copy vs shared ptr and conversion types
-//  * function is too long.  Break up
-bool extract_bag_to_images(const boost::filesystem::path & bag_path,
+// Extract and save images from a given ROSbag camera topic to disk
+//
+// Assumes ROS topic is in Bayer RGGB format. Images saved as .png format
+// TODO: function is too long.  Break up
+//
+// Argument Outputs:
+//  output_path: directory of extracted images
+//  fps: average number of frames per second for extracted images
+bool ExtractBagToImages(const boost::filesystem::path & bag_path,
                            const std::string & topic_name,
                            boost::filesystem::path & output_path,
                            float & fps) {
-
     // Open ROSbag for message processing
     std::cout << "Opening bag for image extraction" << std::endl;
     if(!boost::filesystem::exists(bag_path)) {
@@ -106,13 +128,12 @@ bool extract_bag_to_images(const boost::filesystem::path & bag_path,
     return false;
 }
 
-// images_to_video(input_dir, fps=15, output_file='vid.mp4')
-//  * Check if input folder exists and is non-empty
-//  * Use OpenCV to create
+// Create an MP4 video from a directory of images
+// 
 // It is possible to create a video directly from FFmpeg/libx264 C libraries but
 // quite involved; more straightforward to run on the commandline.  OpenCV's
 // VideoWriter class only supports AVI
-bool images_to_video(const boost::filesystem::path & output_path,
+bool ImagesToVideo(const boost::filesystem::path & output_path,
                      const float & fps) {
     std::string video_name = output_path.parent_path().string()
                              + output_path.stem().string() + ".mp4";
@@ -131,13 +152,8 @@ bool images_to_video(const boost::filesystem::path & output_path,
     return false;
 
 }
+}
 
-// Main
-//  * Parse inputs (bag path, topic name)
-//  * Provide 'help' message
-//  * Run bag_to_images(), images_to_video()
-//  * Debayering?
-//  * Delete image folder
 int main(int argc, char * argv[]) {
     // Parse command line arguments
     if(argc != 3) {
@@ -147,13 +163,14 @@ int main(int argc, char * argv[]) {
     }
     boost::filesystem::path bag_path (argv[1]), images_path;
     std::string topic_name (argv[2]);
-    float fps;
+    float fps = -1.0;
     
-    if(!extract_bag_to_images(bag_path, topic_name, images_path, fps)) {
+    if(!rosbag_to_video::ExtractBagToImages(bag_path, topic_name,
+                                               images_path, fps)) {
         std::cout << "Unable to extract and save ROSbag images" << std::endl;
         return EXIT_FAILURE;
     }
-    if(!images_to_video(images_path, fps)) {
+    if(!rosbag_to_video::ImagesToVideo(images_path, fps)) {
         std::cout << "Unable to convert saved images into a video" << std::endl;
         return EXIT_FAILURE;
     }
