@@ -1,6 +1,6 @@
 # Initial makefile sourced from: https://github.com/gerkey/ros1_external_use
 
-all: rosbag_to_video
+all: extract_video
 
 ros_libs = $(shell pkg-config --libs roscpp rosbag std_msgs sensor_msgs)
 # There are some incompatibility issues with some versions of pkg-config
@@ -9,8 +9,14 @@ ros_libs = $(shell pkg-config --libs roscpp rosbag std_msgs sensor_msgs)
 # absolute path.
 ros_libs_nocolon = $(subst -l:,,$(ros_libs))
 
-rosbag_to_video: rosbag_to_video.cpp
+extract_video: extract_video.o rosbag_to_video.o
+	$(CXX) -std=c++11 -Wall -o $@ $^ `pkg-config --cflags roscpp rosbag std_msgs sensor_msgs opencv` $< $(ros_libs_nocolon) `pkg-config --libs opencv`
+
+extract_video.o: extract_video.cpp
 	$(CXX) -std=c++11 -Wall -o $@ `pkg-config --cflags roscpp rosbag std_msgs sensor_msgs opencv` $< $(ros_libs_nocolon) `pkg-config --libs opencv`
+
+rosbag_to_video.o: rosbag_to_video.cpp
+	$(CXX) -std=c++11 -Wall -c $@ `pkg-config --cflags roscpp rosbag std_msgs sensor_msgs opencv` $< $(ros_libs_nocolon) `pkg-config --libs opencv`
 	# $(CXX) -std=gnu++11 -Wall -o $@ `pkg-config --cflags roscpp std_msgs sensor_msgs opencv` $< $(ros_libs_nocolon) `pkg-config --libs opencv`
 	# $(CXX) -Wall -o $@ `pkg-config --cflags roscpp std_msgs sensor_msgs opencv` $< $(ros_libs_nocolon) `pkg-config --libs opencv`
 
