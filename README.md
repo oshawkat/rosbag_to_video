@@ -2,11 +2,13 @@
 
 This tool allows you to convert a camera topic from a ROSbag into an MP4 video.  You may also consider using the ROS recommended method for [exporting image and video data from a bag file](http://wiki.ros.org/rosbag/Tutorials/Exporting%20image%20and%20video%20data)
 
+### WARNING: Code has not been successfully built, run, or tested yet
+
 ## Getting Started
 
 ### Pre-requisites
 
-This software was built using ROS Kinetic on Xubuntu 16 LTS on a Chromebook.  ROS installation instructions can be found [here](http://wiki.ros.org/kinetic/Installation/Ubuntu).  You will also need OpenCV and Boost eg:
+This software was built using ROS Kinetic on Xubuntu 16 LTS in Crouton on a Chromebook.  **Your environment setup will likely vary.**  ROS installation instructions can be found [here](http://wiki.ros.org/kinetic/Installation/Ubuntu).  You will also need OpenCV and Boost eg:
 ```bash
 sudo apt-get install libopencv-highgui-dev libopencv-dev
 ```
@@ -37,11 +39,12 @@ The two required arguments are:
 ## Known Limitations & Future Work
 
 * Program writes image messages to disk before converting saved images to a video.  This 2 step process reduces RAM requirements (particularly for larger bag files) at the cost of processing time
-* There is currently no support for variable frame rates.  The output video will have the average frame rate of the ROS image messages
-  * Update frame rate calculation to use median instead of average to minimize effect of outliers
+* There is currently no support for variable frame rates.  The output video will have the average frame rate of the extracted ROS image messages
+  * Update frame rate calculation to use median instead of average to minimize outlier impact
+* Source should be split into separate main executable, source lib, and header files.  This requires better understanding of the ```ros1_external`` framework build process
+* Automatically handle different types of camera image formats (eg mono, RGB, Bayer).  Current implementation only works on RGGB 8 images
 * Extract all image topics in a ROSbag into individual videos automatically
-* No unit tests
-* Expects color images
+* Add unit tests
 
 ## Sources
 
